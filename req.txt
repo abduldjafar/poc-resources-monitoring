@@ -1,0 +1,2 @@
+clickhouse-connect==0.1.6
+clickhouse-driver==0.2.4
