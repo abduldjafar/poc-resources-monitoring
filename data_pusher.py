@@ -60,7 +60,7 @@ def pull_datas_from_grafana(url, cookie, resource_type,date_to = datetime.utcnow
             pod = data_in_frame["schema"]["fields"][1]["labels"]["pod"]
             container = full_label_datas[pod]["label_app"]
             team = full_label_datas[pod]["label_autonomic_ai_team"]
-            final_datas = (date_to_str, team, pod, container, resource_type)
+            final_datas = (date_to_str, team, pod, container, resource_type,float(data_value))
             yield final_datas
 
 if __name__ == "__main__":
@@ -70,9 +70,12 @@ if __name__ == "__main__":
     """
     parser = argparse.ArgumentParser()
 
+    to_time_default = datetime.utcnow()
+    from_time_default = to_time_default - timedelta(minutes = 15)
+
     # Adding optional argument
-    parser.add_argument("-f", "--DateFrom", help = "Date From (2022-08-19T13:17:43.611522Z)",default="2022-08-19T13:17:43.611522Z")
-    parser.add_argument("-t", "--DateTo", help = "Date To (2022-08-19T13:32:43.611522Z)",default="2022-08-19T13:32:43.611522Z")
+    parser.add_argument("-f", "--DateFrom", help = "Date From (2022-08-19T13:17:43.611522Z)",default=from_time_default.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
+    parser.add_argument("-t", "--DateTo", help = "Date To (2022-08-19T13:32:43.611522Z)",default=to_time_default.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
 
     
     # Read arguments from command line
@@ -98,15 +101,16 @@ if __name__ == "__main__":
             "pod":"String",
             "container":"String",
             "resource":"String",
+            "usage_in_percent":"Float32"
     }
 
     clickhouse = ClickhouseServer()
     clickhouse.init()
     
     list_columns = ",".join(["{} {}".format(column,columns[column]) for column in columns.keys()])
-    clickhouse.create_table_with_columns("tb_resources_monitoring",list_columns,"default","container")
+    clickhouse.create_table_with_columns("tb_resources_monitoring_2",list_columns,"default","container")
     
     column_for_insert = "({})".format(",".join([column for column in columns.keys()]))
 
     for data in datas_dict.values():
-        clickhouse.insert_data("default","tb_resources_monitoring",column_for_insert,data)
+        clickhouse.insert_data("default","tb_resources_monitoring_2",column_for_insert,data)
